@@ -1,122 +1,83 @@
 package com.amap.placesearch;
 
 import android.app.ProgressDialog;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.amap.api.maps.AMap;
-import com.amap.api.maps.AMapException;
-import com.amap.api.maps.AMapUtils;
+import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.SupportMapFragment;
+import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
-import com.amap.api.maps.model.NaviPara;
+import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.overlay.PoiOverlay;
 import com.amap.api.maps.AMap.OnMarkerClickListener;
 import com.amap.api.maps.AMap.InfoWindowAdapter;
+import com.amap.api.services.core.LatLonPoint;
+import com.amap.api.services.help.Tip;
 import com.amap.api.services.poisearch.PoiSearch.OnPoiSearchListener;
 
 import android.view.View.OnClickListener;
 
 import com.amap.api.services.core.PoiItem;
 import com.amap.api.services.core.SuggestionCity;
-import com.amap.api.services.help.Inputtips;
-import com.amap.api.services.help.InputtipsQuery;
-import com.amap.api.services.help.Tip;
 import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
-import com.amap.api.services.help.Inputtips.InputtipsListener;
-import com.amap.placesearch.util.AMapUtil;
+import com.amap.placesearch.util.Constants;
 import com.amap.placesearch.util.ToastUtil;
-import com.amap.placesearch.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends FragmentActivity implements
-        OnMarkerClickListener, InfoWindowAdapter, TextWatcher,
-        OnPoiSearchListener, OnClickListener, InputtipsListener {
-    private AMap aMap;
-    private AutoCompleteTextView searchText;// 输入搜索关键字
-    private String keyWord = "";// 要输入的poi搜索关键字
+public class MainActivity extends AppCompatActivity implements
+        OnMarkerClickListener, InfoWindowAdapter,
+        OnPoiSearchListener, OnClickListener {
+    private AMap mAMap;
+    private String mKeyWords = "";// 要输入的poi搜索关键字
     private ProgressDialog progDialog = null;// 搜索时进度条
-    private EditText editCity;// 要输入的城市名字或者城市区号
+
     private PoiResult poiResult; // poi返回的结果
     private int currentPage = 0;// 当前页面，从0开始计数
     private PoiSearch.Query query;// Poi查询条件类
     private PoiSearch poiSearch;// POI搜索
+    private TextView mKeywordsTextView;
+    private Marker mPoiMarker;
+
+    public static final int REQUEST_CODE = 100;
+    public static final int RESULT_CODE = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         init();
+        mKeyWords = "";
     }
 
     /**
      * 初始化AMap对象
      */
     private void init() {
-        if (aMap == null) {
-            aMap = ((SupportMapFragment) getSupportFragmentManager()
+        if (mAMap == null) {
+            mAMap = ((SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map)).getMap();
             setUpMap();
         }
+        mKeywordsTextView = (TextView) findViewById(R.id.main_keywords);
+        mKeywordsTextView.setOnClickListener(this);
     }
 
     /**
      * 设置页面监听
      */
     private void setUpMap() {
-        Button searButton = (Button) findViewById(R.id.searchButton);
-        searButton.setOnClickListener(this);
-        Button nextButton = (Button) findViewById(R.id.nextButton);
-        nextButton.setOnClickListener(this);
-        searchText = (AutoCompleteTextView) findViewById(R.id.keyWord);
-        searchText.addTextChangedListener(this);// 添加文本输入框监听事件
-        editCity = (EditText) findViewById(R.id.city);
-        aMap.setOnMarkerClickListener(this);// 添加点击marker监听事件
-        aMap.setInfoWindowAdapter(this);// 添加显示infowindow监听事件
-    }
-
-    /**
-     * 点击搜索按钮
-     */
-    public void searchButton() {
-        keyWord = AMapUtil.checkEditText(searchText);
-        if ("".equals(keyWord)) {
-            ToastUtil.show(MainActivity.this, "请输入搜索关键字");
-            return;
-        } else {
-            doSearchQuery();
-        }
-    }
-
-    /**
-     * 点击下一页按钮
-     */
-    public void nextButton() {
-        if (query != null && poiSearch != null && poiResult != null) {
-            if (poiResult.getPageCount() - 1 > currentPage) {
-                currentPage++;
-                query.setPageNum(currentPage);// 设置查后一页
-                poiSearch.searchPOIAsyn();
-            } else {
-                ToastUtil.show(MainActivity.this,
-                        R.string.no_result);
-            }
-        }
+        mAMap.setOnMarkerClickListener(this);// 添加点击marker监听事件
+        mAMap.setInfoWindowAdapter(this);// 添加显示infowindow监听事件
+        mAMap.getUiSettings().setRotateGesturesEnabled(false);
     }
 
     /**
@@ -128,7 +89,7 @@ public class MainActivity extends FragmentActivity implements
         progDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progDialog.setIndeterminate(false);
         progDialog.setCancelable(false);
-        progDialog.setMessage("正在搜索:\n" + keyWord);
+        progDialog.setMessage("正在搜索:\n" + mKeyWords);
         progDialog.show();
     }
 
@@ -144,12 +105,15 @@ public class MainActivity extends FragmentActivity implements
     /**
      * 开始进行poi搜索
      */
-    protected void doSearchQuery() {
+    protected void doSearchQuery(String keywords) {
         showProgressDialog();// 显示进度框
         currentPage = 0;
-        query = new PoiSearch.Query(keyWord, "", editCity.getText().toString());// 第一个参数表示搜索字符串，第二个参数表示poi搜索类型，第三个参数表示poi搜索区域（空字符串代表全国）
-        query.setPageSize(10);// 设置每页最多返回多少条poiitem
-        query.setPageNum(currentPage);// 设置查第一页
+        // 第一个参数表示搜索字符串，第二个参数表示poi搜索类型，第三个参数表示poi搜索区域（空字符串代表全国）
+        query = new PoiSearch.Query(keywords, "", Constants.DEFAULT_CITY);
+        // 设置每页最多返回多少条poiitem
+        query.setPageSize(10);
+        // 设置查第一页
+        query.setPageNum(currentPage);
 
         poiSearch = new PoiSearch(this, query);
         poiSearch.setOnPoiSearchListener(this);
@@ -176,79 +140,7 @@ public class MainActivity extends FragmentActivity implements
 
         TextView snippet = (TextView) view.findViewById(R.id.snippet);
         snippet.setText(marker.getSnippet());
-        ImageButton button = (ImageButton) view
-                .findViewById(R.id.start_amap_app);
-        // 调起高德地图app
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startAMapNavi(marker);
-            }
-        });
         return view;
-    }
-
-    /**
-     * 调起高德地图导航功能，如果没安装高德地图，会进入异常，可以在异常中处理，调起高德地图app的下载页面
-     */
-    public void startAMapNavi(Marker marker) {
-        // 构造导航参数
-        NaviPara naviPara = new NaviPara();
-        // 设置终点位置
-        naviPara.setTargetPoint(marker.getPosition());
-        // 设置导航策略，这里是避免拥堵
-        naviPara.setNaviStyle(NaviPara.DRIVING_AVOID_CONGESTION);
-
-        // 调起高德地图导航
-        try {
-            AMapUtils.openAMapNavi(naviPara, getApplicationContext());
-        } catch (com.amap.api.maps.AMapException e) {
-
-            // 如果没安装会进入异常，调起下载页面
-            AMapUtils.getLatestAMapApp(getApplicationContext());
-
-        }
-
-    }
-
-    /**
-     * 判断高德地图app是否已经安装
-     */
-    public boolean getAppIn() {
-        PackageInfo packageInfo = null;
-        try {
-        packageInfo = this.getPackageManager().getPackageInfo(
-                "com.autonavi.minimap", 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            packageInfo = null;
-            e.printStackTrace();
-        }
-        // 本手机没有安装高德地图app
-        if (packageInfo != null) {
-            return true;
-        }
-        // 本手机成功安装有高德地图app
-        else {
-            return false;
-        }
-    }
-
-    /**
-     * 获取当前app的应用名字
-     */
-    public String getApplicationName() {
-        PackageManager packageManager = null;
-        ApplicationInfo applicationInfo = null;
-        try {
-            packageManager = getApplicationContext().getPackageManager();
-            applicationInfo = packageManager.getApplicationInfo(
-                    getPackageName(), 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            applicationInfo = null;
-        }
-        String applicationName = (String) packageManager
-                .getApplicationLabel(applicationInfo);
-        return applicationName;
     }
 
     /**
@@ -263,28 +155,6 @@ public class MainActivity extends FragmentActivity implements
         }
         ToastUtil.show(MainActivity.this, infomation);
 
-    }
-
-    @Override
-    public void afterTextChanged(Editable s) {
-
-    }
-
-    @Override
-    public void beforeTextChanged(CharSequence s, int start, int count,
-                                  int after) {
-
-    }
-
-    @Override
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-        String newText = s.toString().trim();
-        if (!AMapUtil.IsEmptyOrNullString(newText)) {
-            InputtipsQuery inputquery = new InputtipsQuery(newText, editCity.getText().toString());
-            Inputtips inputTips = new Inputtips(MainActivity.this, inputquery);
-            inputTips.setInputtipsListener(this);
-            inputTips.requestInputtipsAsyn();
-        }
     }
 
 
@@ -304,8 +174,8 @@ public class MainActivity extends FragmentActivity implements
                             .getSearchSuggestionCitys();// 当搜索不到poiitem数据时，会返回含有搜索关键字的城市信息
 
                     if (poiItems != null && poiItems.size() > 0) {
-                        aMap.clear();// 清理之前的图标
-                        PoiOverlay poiOverlay = new PoiOverlay(aMap, poiItems);
+                        mAMap.clear();// 清理之前的图标
+                        PoiOverlay poiOverlay = new PoiOverlay(mAMap, poiItems);
                         poiOverlay.removeFromMap();
                         poiOverlay.addToMap();
                         poiOverlay.zoomToSpan();
@@ -334,44 +204,60 @@ public class MainActivity extends FragmentActivity implements
     }
 
     /**
-     * Button点击事件回调方法
+     * 输入提示activity选择结果后的处理逻辑
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_CODE && data
+                != null) {
+            mAMap.clear();
+            Tip tip = data.getParcelableExtra(Constants.EXTRA_TIP);
+            if (tip.getPoiID() == null || tip.getPoiID().equals("")) {
+                doSearchQuery(tip.getName());
+            } else {
+                addTipMarker(tip);
+            }
+        }
+    }
+
+    /**
+     * 用marker展示输入提示list选中数据
+     *
+     * @param tip
+     */
+    private void addTipMarker(Tip tip) {
+        if (tip == null) {
+            return;
+        }
+        mPoiMarker = mAMap.addMarker(new MarkerOptions());
+        LatLonPoint point = tip.getPoint();
+        if (point != null) {
+            LatLng markerPosition = new LatLng(point.getLatitude(), point.getLongitude());
+            mPoiMarker.setPosition(markerPosition);
+            mAMap.moveCamera(CameraUpdateFactory.newLatLngZoom(markerPosition, 17));
+        }
+        mPoiMarker.setTitle(tip.getName());
+        mPoiMarker.setSnippet(tip.getAddress());
+    }
+
+    /**
+     * 点击事件回调方法
      */
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            /**
-             * 点击搜索按钮
-             */
-            case R.id.searchButton:
-                searchButton();
-                break;
-            /**
-             * 点击下一页按钮
-             */
-            case R.id.nextButton:
-                nextButton();
+            case R.id.main_keywords:
+                Intent intent = new Intent(this, InputTipsActivity.class);
+                startActivityForResult(intent, REQUEST_CODE);
                 break;
             default:
                 break;
         }
-    }
-
-
-    @Override
-    public void onGetInputtips(List<Tip> tipList, int rCode) {
-        if (rCode == 1000) {// 正确返回
-            List<String> listString = new ArrayList<String>();
-            for (int i = 0; i < tipList.size(); i++) {
-                listString.add(tipList.get(i).getName());
-            }
-            ArrayAdapter<String> aAdapter = new ArrayAdapter<String>(
-                    getApplicationContext(),
-                    R.layout.route_inputs, listString);
-            searchText.setAdapter(aAdapter);
-            aAdapter.notifyDataSetChanged();
-        } else {
-            ToastUtil.showerror(this, rCode);
-        }
-
     }
 }

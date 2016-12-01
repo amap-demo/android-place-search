@@ -4,6 +4,10 @@ import com.amap.api.maps.model.LatLng;
 
 public class Constants {
 
+	public static String DEFAULT_CITY = "北京";
+	public static final String EXTRA_TIP = "ExtraTip";
+
+
 	public static final int ERROR = 1001;// 网络异常
 	public static final int ROUTE_START_SEARCH = 2000;
 	public static final int ROUTE_END_SEARCH = 2001;

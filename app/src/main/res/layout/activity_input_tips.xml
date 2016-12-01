@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
-    <fragment
-        android:id="@+id/map"
-        class="com.amap.api.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    android:orientation="vertical"
+    tools:context="com.amap.placesearch.InputTipsActivity">
 
-
-    <TextView
-        android:id="@+id/main_keywords"
+    <AutoCompleteTextView
+        android:id="@+id/keyWord"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/text_search"
-        android:layout_margin="10dp"
-        android:clickable="true"
         android:completionThreshold="1"
         android:dropDownVerticalOffset="1.0dip"
         android:hint="请输入关键字"
@@ -29,6 +23,11 @@
         android:textColorHint="@color/darkgrey"
         android:textSize="16.0sp" />
 
+    <ListView
+        android:id="@+id/inputtip_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
+    </ListView>
 
-</RelativeLayout>
+</LinearLayout>
