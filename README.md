@@ -14,7 +14,15 @@
 - [通过maven库引入SDK方法](http://lbsbbs.amap.com/forum.php?mod=viewthread&tid=18786).
 
 ## 扫一扫安装##
-![Screenshot](https://github.com/amap-demo/android-place-search/raw/master/resource/download.png)
+
+ ![Screenshot](https://github.com/amap-demo/android-place-search/raw/master/resource/download.png)
 
 ## 示例效果##
-![Screenshot](https://github.com/amap-demo/android-place-search/raw/master/resource/Screenshot.png)
+
+ - 输入提示展示
+ 
+ ![Screenshot](https://github.com/amap-demo/android-place-search/raw/master/resource/Screenshot.png)
+
+ - POI搜索结果展示
+ 
+ ![Screenshot](https://github.com/amap-demo/android-place-search/raw/master/resource/ScreenshotPoiSearch.png)
