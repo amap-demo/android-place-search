@@ -1,17 +1,15 @@
 package com.amap.placesearch;
 
+import android.app.Activity;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.AutoCompleteTextView;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.support.v7.widget.SearchView;
 
-import com.amap.api.services.core.LatLonPoint;
 import com.amap.api.services.help.Inputtips;
 import com.amap.api.services.help.InputtipsQuery;
 import com.amap.api.services.help.Tip;
@@ -23,43 +21,40 @@ import com.amap.placesearch.util.ToastUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InputTipsActivity extends AppCompatActivity implements TextWatcher, Inputtips.InputtipsListener, OnItemClickListener {
-    private AutoCompleteTextView searchText;// 输入搜索关键字
+public class InputTipsActivity extends Activity implements SearchView.OnQueryTextListener, Inputtips.InputtipsListener, OnItemClickListener, View.OnClickListener {
+    private SearchView mSearchView;// 输入搜索关键字
+    private ImageView mBack;
     private ListView mInputListView;
     private List<Tip> mCurrentTipList;
+    private InputTipsAdapter mIntipAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_input_tips);
-        searchText = (AutoCompleteTextView) findViewById(R.id.keyWord);
-        searchText.addTextChangedListener(this);// 添加文本输入框监听事件
+        initSearchView();
         mInputListView = (ListView) findViewById(R.id.inputtip_list);
         mInputListView.setOnItemClickListener(this);
+        mBack = (ImageView) findViewById(R.id.back);
+        mBack.setOnClickListener(this);
     }
 
-    @Override
-    public void afterTextChanged(Editable s) {
-
+    private void initSearchView() {
+        mSearchView = (SearchView) findViewById(R.id.keyWord);
+        mSearchView.setOnQueryTextListener(this);
+        //设置SearchView默认为展开显示
+        mSearchView.setIconified(false);
+        mSearchView.onActionViewExpanded();
+        mSearchView.setIconifiedByDefault(true);
+        mSearchView.setSubmitButtonEnabled(false);
     }
 
-    @Override
-    public void beforeTextChanged(CharSequence s, int start, int count,
-                                  int after) {
-
-    }
-
-    @Override
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-        String newText = s.toString().trim();
-        if (!AMapUtil.IsEmptyOrNullString(newText)) {
-            InputtipsQuery inputquery = new InputtipsQuery(newText, Constants.DEFAULT_CITY);
-            Inputtips inputTips = new Inputtips(InputTipsActivity.this.getApplicationContext(), inputquery);
-            inputTips.setInputtipsListener(this);
-            inputTips.requestInputtipsAsyn();
-        }
-    }
-
+    /**
+     * 输入提示回调
+     *
+     * @param tipList
+     * @param rCode
+     */
     @Override
     public void onGetInputtips(List<Tip> tipList, int rCode) {
         if (rCode == 1000) {// 正确返回
@@ -68,11 +63,11 @@ public class InputTipsActivity extends AppCompatActivity implements TextWatcher,
             for (int i = 0; i < tipList.size(); i++) {
                 listString.add(tipList.get(i).getName());
             }
-            InputTipsAdapter aAdapter = new InputTipsAdapter(
+            mIntipAdapter = new InputTipsAdapter(
                     getApplicationContext(),
-                    tipList);
-            mInputListView.setAdapter(aAdapter);
-            aAdapter.notifyDataSetChanged();
+                    mCurrentTipList);
+            mInputListView.setAdapter(mIntipAdapter);
+            mIntipAdapter.notifyDataSetChanged();
         } else {
             ToastUtil.showerror(this, rCode);
         }
@@ -85,7 +80,51 @@ public class InputTipsActivity extends AppCompatActivity implements TextWatcher,
             Tip tip = (Tip) adapterView.getItemAtPosition(i);
             Intent intent = new Intent();
             intent.putExtra(Constants.EXTRA_TIP, tip);
-            setResult(MainActivity.RESULT_CODE, intent);
+            setResult(MainActivity.RESULT_CODE_INPUTTIPS, intent);
+            this.finish();
+        }
+    }
+
+    /**
+     * 按下确认键触发，本例为键盘回车或搜索键
+     *
+     * @param query
+     * @return
+     */
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        Intent intent = new Intent();
+        intent.putExtra(Constants.KEY_WORDS_NAME, query);
+        setResult(MainActivity.RESULT_CODE_KEYWORDS, intent);
+        this.finish();
+        return false;
+    }
+
+    /**
+     * 输入字符变化时触发
+     *
+     * @param newText
+     * @return
+     */
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        if (!AMapUtil.IsEmptyOrNullString(newText)) {
+            InputtipsQuery inputquery = new InputtipsQuery(newText, Constants.DEFAULT_CITY);
+            Inputtips inputTips = new Inputtips(InputTipsActivity.this.getApplicationContext(), inputquery);
+            inputTips.setInputtipsListener(this);
+            inputTips.requestInputtipsAsyn();
+        } else {
+            if (mIntipAdapter != null && mCurrentTipList != null) {
+                mCurrentTipList.clear();
+                mIntipAdapter.notifyDataSetChanged();
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void onClick(View view) {
+        if (view.getId() == R.id.back) {
             this.finish();
         }
     }

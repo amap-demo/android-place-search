@@ -6,6 +6,7 @@ public class Constants {
 
 	public static String DEFAULT_CITY = "北京";
 	public static final String EXTRA_TIP = "ExtraTip";
+	public static final String KEY_WORDS_NAME = "KeyWord";
 
 
 	public static final int ERROR = 1001;// 网络异常

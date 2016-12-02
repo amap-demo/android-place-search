@@ -5,4 +5,6 @@
     <color name="colorAccent">#FF4081</color>
     <color name="darkgrey"> #C0C0C0</color>
     <color name="grey"> #ebebeb</color>
+    <color name="white">#FFF</color>
+    <color name="text_hint">#6C6C6C</color>
 </resources>

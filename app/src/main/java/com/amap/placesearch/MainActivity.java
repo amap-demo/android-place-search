@@ -3,10 +3,9 @@ package com.amap.placesearch;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.FragmentActivity;
 import android.view.View;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.amap.api.maps.AMap;
@@ -33,7 +32,7 @@ import com.amap.placesearch.util.ToastUtil;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements
+public class MainActivity extends FragmentActivity implements
         OnMarkerClickListener, InfoWindowAdapter,
         OnPoiSearchListener, OnClickListener {
     private AMap mAMap;
@@ -46,14 +45,18 @@ public class MainActivity extends AppCompatActivity implements
     private PoiSearch poiSearch;// POI搜索
     private TextView mKeywordsTextView;
     private Marker mPoiMarker;
+    private ImageView mCleanKeyWords;
 
     public static final int REQUEST_CODE = 100;
-    public static final int RESULT_CODE = 101;
+    public static final int RESULT_CODE_INPUTTIPS = 101;
+    public static final int RESULT_CODE_KEYWORDS = 102;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mCleanKeyWords = (ImageView)findViewById(R.id.clean_keywords);
+        mCleanKeyWords.setOnClickListener(this);
         init();
         mKeyWords = "";
     }
@@ -63,8 +66,9 @@ public class MainActivity extends AppCompatActivity implements
      */
     private void init() {
         if (mAMap == null) {
-            mAMap = ((SupportMapFragment) getSupportFragmentManager()
+            mAMap = ((SupportMapFragment) this.getSupportFragmentManager()
                     .findFragmentById(R.id.map)).getMap();
+
             setUpMap();
         }
         mKeywordsTextView = (TextView) findViewById(R.id.main_keywords);
@@ -214,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_CODE && data
+        if (resultCode == RESULT_CODE_INPUTTIPS && data
                 != null) {
             mAMap.clear();
             Tip tip = data.getParcelableExtra(Constants.EXTRA_TIP);
@@ -222,6 +226,20 @@ public class MainActivity extends AppCompatActivity implements
                 doSearchQuery(tip.getName());
             } else {
                 addTipMarker(tip);
+            }
+            mKeywordsTextView.setText(tip.getName());
+            if(!tip.getName().equals("")){
+                mCleanKeyWords.setVisibility(View.VISIBLE);
+            }
+        } else if (resultCode == RESULT_CODE_KEYWORDS && data != null) {
+            mAMap.clear();
+            String keywords = data.getStringExtra(Constants.KEY_WORDS_NAME);
+            if(keywords != null && !keywords.equals("")){
+                doSearchQuery(keywords);
+            }
+            mKeywordsTextView.setText(keywords);
+            if(!keywords.equals("")){
+                mCleanKeyWords.setVisibility(View.VISIBLE);
             }
         }
     }
@@ -256,6 +274,10 @@ public class MainActivity extends AppCompatActivity implements
                 Intent intent = new Intent(this, InputTipsActivity.class);
                 startActivityForResult(intent, REQUEST_CODE);
                 break;
+            case R.id.clean_keywords:
+                mKeywordsTextView.setText("");
+                mAMap.clear();
+                mCleanKeyWords.setVisibility(View.GONE);
             default:
                 break;
         }
