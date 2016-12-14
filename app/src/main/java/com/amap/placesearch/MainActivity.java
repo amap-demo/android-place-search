@@ -14,7 +14,6 @@ import com.amap.api.maps.SupportMapFragment;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
-import com.amap.api.maps.overlay.PoiOverlay;
 import com.amap.api.maps.AMap.OnMarkerClickListener;
 import com.amap.api.maps.AMap.InfoWindowAdapter;
 import com.amap.api.services.core.LatLonPoint;
@@ -27,6 +26,7 @@ import com.amap.api.services.core.PoiItem;
 import com.amap.api.services.core.SuggestionCity;
 import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
+import com.amap.placesearch.overlay.PoiOverlay;
 import com.amap.placesearch.util.Constants;
 import com.amap.placesearch.util.ToastUtil;
 

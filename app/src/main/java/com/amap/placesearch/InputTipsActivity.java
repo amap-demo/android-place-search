@@ -14,7 +14,6 @@ import com.amap.api.services.help.Inputtips;
 import com.amap.api.services.help.InputtipsQuery;
 import com.amap.api.services.help.Tip;
 import com.amap.placesearch.adapter.InputTipsAdapter;
-import com.amap.placesearch.util.AMapUtil;
 import com.amap.placesearch.util.Constants;
 import com.amap.placesearch.util.ToastUtil;
 
@@ -108,7 +107,7 @@ public class InputTipsActivity extends Activity implements SearchView.OnQueryTex
      */
     @Override
     public boolean onQueryTextChange(String newText) {
-        if (!AMapUtil.IsEmptyOrNullString(newText)) {
+        if (!IsEmptyOrNullString(newText)) {
             InputtipsQuery inputquery = new InputtipsQuery(newText, Constants.DEFAULT_CITY);
             Inputtips inputTips = new Inputtips(InputTipsActivity.this.getApplicationContext(), inputquery);
             inputTips.setInputtipsListener(this);
@@ -127,5 +126,9 @@ public class InputTipsActivity extends Activity implements SearchView.OnQueryTex
         if (view.getId() == R.id.back) {
             this.finish();
         }
+    }
+
+    public static boolean IsEmptyOrNullString(String s) {
+        return (s == null) || (s.trim().length() == 0);
     }
 }
