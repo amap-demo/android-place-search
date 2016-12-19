@@ -23,16 +23,20 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.amap.api.v2.apikey"
-            android:value="您的Key" />
+            android:value="您的key" />
 
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".InputTipsActivity">
+        <activity
+            android:name=".InputTipsActivity"
+            android:screenOrientation="portrait">
 
 
         </activity>
